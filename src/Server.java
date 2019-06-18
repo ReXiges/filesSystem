@@ -48,8 +48,8 @@ public class Server {
         private Socket socket;
         private Scanner in;
         private PrintWriter out;
-        private static User user;
-        private static Directory currentDirectory;
+        private User user;
+        private Directory currentDirectory;
         public Handler(Socket socket) {
             this.socket = socket;
         }
@@ -160,27 +160,53 @@ public class Server {
                 			}
                 			out.println("SUCCESS");
                 			break;
-                		case "mv":
-                			if(input.length<3) {
-                				out.println("INVALIDCOMMAND");
-                			}
-                			else {
-                				for(int i=1;i<input.length;i++) {
-                					deleteFile(input[i]);
-                				}
-                			}
-                			out.println("SUCCESS");
-                			break;
                 		case "move":
                 			if(input.length<2) {
                 				out.println("INVALIDCOMMAND");
                 			}
                 			else {
-                				for(int i=1;i<input.length;i++) {
-                					deleteFile(input[i]);
+                				String [] pathnames = input[1].split("/");
+                				String filename=pathnames[pathnames.length-1];
+                				String path="";
+                				if(pathnames.length>1) {
+                					path=pathnames[0];
+                				}
+                				for(int i=1;i<pathnames.length-1;i++) {
+                					path+="/"+pathnames[i];
+                				}
+                				Directory holder= getDirectoryDinamically(path);
+                				Directory receiver= getDirectoryDinamically(input[2]);
+                				if(holder==null || receiver==null) {
+                					out.println("DIRNOTFOUND");
+                				}
+                				else {
+                					if(filename.contains(".")) {
+                						File file=holder.getFile(filename);
+                    					if(file==null) {
+                    						out.println("INVALIDFILE");
+                    					}
+                    					else {
+                    						Files.move(Paths.get(file.getPath()), Paths.get(receiver.getPath()+"/"+filename));
+                    						holder.removeFile(file);
+                    						receiver.addFile(file);
+                    						out.println("SUCCESS");
+                    					}
+                					}
+                					else {
+                						Directory directory=holder.getSubDirectory(filename);
+                    					if(directory==null) {
+                    						out.println("DIRNOTFOUND");
+                    					}
+                    					else {
+                    						Files.move(Paths.get(directory.getPath()), Paths.get(receiver.getPath()+"/"+filename));
+                    						holder.removeSubDirectory(directory);
+                    						receiver.addSubFolder(directory);
+                    						Directory.updatePaths(directory, receiver.getPath());
+                    						out.println("SUCCESS");
+                    					}
+                					}
                 				}
                 			}
-                			out.println("SUCCESS");
                 			break;
                 		case "pr":
                 			if(input.length<2) {
@@ -247,7 +273,7 @@ public class Server {
                 try { socket.close(); } catch (IOException e) {}
             }
         }
-        public static Directory getDirectoryDinamically(String input) {
+     public Directory getDirectoryDinamically(String input) {
          	Directory newDirectory=Directory.findSubFolder(currentDirectory,  currentDirectory.getName()+"/"+input);
      		if(newDirectory==null) {
      			newDirectory=Directory.findSubFolder(root, "root/"+user.getName()+"/"+input);
@@ -301,7 +327,7 @@ public class Server {
          }
      }
      
-     static void deleteFile(String pathString) throws IOException {
+     public void deleteFile(String pathString) throws IOException {
      	String[] pathnames=pathString.split("/");
  		String fileName=pathnames[pathnames.length-1];
  		Directory holder=currentDirectory;
@@ -354,16 +380,12 @@ public class Server {
     	try {
 			xmlfier.userToXML(users, "users.xml");
 		} catch (SAXException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (TransformerException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     }
