@@ -124,6 +124,17 @@ public class Directory {
 		}
 		return null;
 	}
+	public static void updatePaths(Directory current,String path) {
+		current.setPath(path+current.getName());
+		ArrayList<File> newFiles= new ArrayList<File>();
+		for(File f:current.getFiles()) {
+			newFiles.add(new File(current.path+f.getName()));
+		}
+		current.setFiles(newFiles);
+		for(Directory d: current.getSubfolders()) {
+			updatePaths(d,current.getPath());
+		}
+	}
 	
 	public String contentToSting() {
 		String result="Currentfolder: "+this.path.split("root/")[1]+"$";

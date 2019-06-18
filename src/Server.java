@@ -54,6 +54,8 @@ public class Server {
         public Handler(Socket socket) {
             this.socket = socket;
         }
+        
+        
 
         public void run() {
             try {
@@ -91,7 +93,6 @@ public class Server {
                 			else {
                 				String[] pathnames=input[1].split("/");
                 				String fileName=pathnames[pathnames.length-1];
-                				System.out.println("file name: "+fileName);
                 				Directory holder=currentDirectory;
                 				String content="test";
                 				for(int i=2;i<input.length;i++) {
@@ -103,8 +104,7 @@ public class Server {
                     				for(int i=1;i<pathnames.length-1;i++) {
                     					path+="/"+pathnames[i];
                     				}
-                    				System.out.println("path: "+path);
-                    				holder=Directory.findSubFolder(currentDirectory, currentDirectory.getName()+"/"+path);
+                    				holder=getDirectoryDinamically(path);
                     				
                 				}
                 				if(holder!=null) {
@@ -167,11 +167,48 @@ public class Server {
                 				out.println("INVALIDCOMMAND");
                 			}
                 			else {
-                				for(int i=1;i<input.length;i++) {
-                					deleteFile(input[i]);
+                				String [] pathnames = input[1].split("/");
+                				String filename=pathnames[pathnames.length-1];
+                				String path="";
+                				if(pathnames.length>1) {
+                					path=pathnames[0];
+                				}
+                				for(int i=1;i<pathnames.length-1;i++) {
+                					path+="/"+pathnames[i];
+                				}
+                				Directory holder= getDirectoryDinamically(path);
+                				Directory receiver= getDirectoryDinamically(input[2]);
+                				if(holder==null || receiver==null) {
+                					out.println("DIRNOTFOUND");
+                				}
+                				else {
+                					if(filename.contains(".")) {
+                						File file=holder.getFile(filename);
+                    					if(file==null) {
+                    						out.println("INVALIDFILE");
+                    					}
+                    					else {
+                    						Files.move(Paths.get(file.getPath()), Paths.get(receiver.getPath()+"/"+filename));
+                    						holder.removeFile(file);
+                    						receiver.addFile(file);
+                    						out.println("SUCCESS");
+                    					}
+                					}
+                					else {
+                						Directory directory=holder.getSubDirectory(filename);
+                    					if(directory==null) {
+                    						out.println("DIRNOTFOUND");
+                    					}
+                    					else {
+                    						Files.move(Paths.get(directory.getPath()), Paths.get(receiver.getPath()+"/"+filename));
+                    						holder.removeSubDirectory(directory);
+                    						receiver.addSubFolder(directory);
+                    						Directory.updatePaths(directory, receiver.getPath());
+                    						out.println("SUCCESS");
+                    					}
+                					}
                 				}
                 			}
-                			out.println("SUCCESS");
                 			break;
                 		case "pr":
                 			if(input.length<2) {
@@ -210,10 +247,7 @@ public class Server {
                     			out.println("$");
                 			}
                 			else {
-                				newDirectory=Directory.findSubFolder(currentDirectory,  currentDirectory.getName()+"/"+input[1]);
-                				if(newDirectory==null) {
-                					newDirectory=Directory.findSubFolder(root, "root/"+user.getName()+"/"+input[1]);
-                    			}
+                				newDirectory=getDirectoryDinamically(input[1]);
                 				if(newDirectory==null) {
                 					out.println("DIRNOTFOUND");
                 				}
@@ -268,6 +302,13 @@ public class Server {
                 try { socket.close(); } catch (IOException e) {}
             }
         }
+     public Directory getDirectoryDinamically(String input) {
+         	Directory newDirectory=Directory.findSubFolder(currentDirectory,  currentDirectory.getName()+"/"+input);
+     		if(newDirectory==null) {
+     			newDirectory=Directory.findSubFolder(root, "root/"+user.getName()+"/"+input);
+     		}
+     		return newDirectory;
+         }
         
      public boolean logIn() {
     	 out.println("USER");
@@ -315,7 +356,11 @@ public class Server {
          }
      }
      
+<<<<<<< HEAD
      void deleteFile(String pathString) throws IOException {
+=======
+     public void deleteFile(String pathString) throws IOException {
+>>>>>>> 6f178495627d4d1d6e621f15f745be1f9ccc923d
      	String[] pathnames=pathString.split("/");
  		String fileName=pathnames[pathnames.length-1];
  		Directory holder=currentDirectory;
@@ -325,7 +370,7 @@ public class Server {
  				path+="/"+pathnames[i];
  			}
  			System.out.println("path: "+path);
- 			holder=Directory.findSubFolder(currentDirectory, currentDirectory.getName()+"/"+path);
+ 			holder=getDirectoryDinamically(path);
  		}
  		if(holder!=null) {
  			System.out.println("holder path: "+holder.getPath());
@@ -343,6 +388,8 @@ public class Server {
  				}
  			}
  		}
+     
+     
  		
  	} 
     private static Directory createNewDirectory(Directory parent,String path, String name) {
@@ -366,16 +413,12 @@ public class Server {
     	try {
 			xmlfier.userToXML(users, "users.xml");
 		} catch (SAXException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (TransformerException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     }
@@ -394,6 +437,8 @@ public class Server {
     		  }
     	}
     }
+    
+    
     
     public static String printFileProperties(File file) throws IOException {
 		String name=file.getName();
