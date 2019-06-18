@@ -48,11 +48,19 @@ public class Server {
         private Socket socket;
         private Scanner in;
         private PrintWriter out;
-        private User user;
+        private static User user;
         private static Directory currentDirectory;
         public Handler(Socket socket) {
             this.socket = socket;
         }
+        
+        public static Directory getDirectoryDinamically(String input) {
+         	Directory newDirectory=Directory.findSubFolder(currentDirectory,  currentDirectory.getName()+"/"+input);
+     		if(newDirectory==null) {
+     			newDirectory=Directory.findSubFolder(root, "root/"+user.getName()+"/"+input);
+     		}
+     		return newDirectory;
+         }
 
         public void run() {
             try {
@@ -89,7 +97,6 @@ public class Server {
                 			else {
                 				String[] pathnames=input[1].split("/");
                 				String fileName=pathnames[pathnames.length-1];
-                				System.out.println("file name: "+fileName);
                 				Directory holder=currentDirectory;
                 				String content="test";
                 				for(int i=2;i<input.length;i++) {
@@ -101,8 +108,7 @@ public class Server {
                     				for(int i=1;i<pathnames.length-1;i++) {
                     					path+="/"+pathnames[i];
                     				}
-                    				System.out.println("path: "+path);
-                    				holder=Directory.findSubFolder(currentDirectory, currentDirectory.getName()+"/"+path);
+                    				holder=getDirectoryDinamically(path);
                     				
                 				}
                 				if(holder!=null) {
@@ -160,6 +166,17 @@ public class Server {
                 			}
                 			out.println("SUCCESS");
                 			break;
+                		case "mv":
+                			if(input.length<3) {
+                				out.println("INVALIDCOMMAND");
+                			}
+                			else {
+                				for(int i=1;i<input.length;i++) {
+                					deleteFile(input[i]);
+                				}
+                			}
+                			out.println("SUCCESS");
+                			break;
                 		case "move":
                 			if(input.length<2) {
                 				out.println("INVALIDCOMMAND");
@@ -208,10 +225,7 @@ public class Server {
                     			out.println("$");
                 			}
                 			else {
-                				newDirectory=Directory.findSubFolder(currentDirectory,  currentDirectory.getName()+"/"+input[1]);
-                				if(newDirectory==null) {
-                					newDirectory=Directory.findSubFolder(root, "root/"+user.getName()+"/"+input[1]);
-                    			}
+                				newDirectory=getDirectoryDinamically(input[1]);
                 				if(newDirectory==null) {
                 					out.println("DIRNOTFOUND");
                 				}
@@ -296,7 +310,7 @@ public class Server {
  				path+="/"+pathnames[i];
  			}
  			System.out.println("path: "+path);
- 			holder=Directory.findSubFolder(currentDirectory, currentDirectory.getName()+"/"+path);
+ 			holder=getDirectoryDinamically(path);
  		}
  		if(holder!=null) {
  			System.out.println("holder path: "+holder.getPath());
@@ -314,6 +328,8 @@ public class Server {
  				}
  			}
  		}
+     
+     
  		
  	} 
     private static Directory createNewDirectory(Directory parent,String path, String name) {
@@ -365,6 +381,8 @@ public class Server {
     		  }
     	}
     }
+    
+    
     
     public static String printFileProperties(File file) throws IOException {
 		String name=file.getName();
