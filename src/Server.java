@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.text.SimpleDateFormat;
@@ -49,7 +50,7 @@ public class Server {
         private Scanner in;
         private PrintWriter out;
         private User user;
-        private static Directory currentDirectory;
+        private Directory currentDirectory;
         public Handler(Socket socket) {
             this.socket = socket;
         }
@@ -64,6 +65,7 @@ public class Server {
                 	if(input.length==0) {
                 		out.println("INVALIDCOMMAND");
                 	}
+                	
                 	else {
                 		switch(input[0]) {
                 		case "LOGIN":
@@ -222,8 +224,35 @@ public class Server {
                 				}
                 			}
                 			break;
+                		case "cp":
+                			if (input.length!=3){
+                				out.println("INVALIDCOMMAND");
+                				break;
+                			}else {
+                				String source = input[1];
+                				String destination=input[2];
+                				if(!source.contains(":")) {
+                					source ="./"+currentDirectory.getPath() +"/"+ source;
+                				}
+                				if(!destination.contains(":")) {
+                					destination="./"+currentDirectory.getPath()+"/"+destination;
+                				}
+                				try {
+                					System.out.println("cp "+source + " a ->" + destination);
+                    				Files.copy(Paths.get(source),Paths.get(destination),StandardCopyOption.REPLACE_EXISTING);
+                				}catch(Exception e) {
+                					e.printStackTrace();
+                					out.println("INVALIDCOMMAND");
+                				}
+                				currentDirectory=Directory.findSubFolder(root,  currentDirectory.getPath());
+                				out.println(currentDirectory.contentToSting());
+                    			out.println("$");
+                				break;
+                			}
                 		default:
                 			out.println("INVALIDCOMMAND");
+                			out.println(currentDirectory.contentToSting());
+                			out.println("$");
                 			break;
                 			
                 		}
@@ -286,7 +315,7 @@ public class Server {
          }
      }
      
-     static void deleteFile(String pathString) throws IOException {
+     void deleteFile(String pathString) throws IOException {
      	String[] pathnames=pathString.split("/");
  		String fileName=pathnames[pathnames.length-1];
  		Directory holder=currentDirectory;
