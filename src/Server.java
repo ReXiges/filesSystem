@@ -54,13 +54,7 @@ public class Server {
             this.socket = socket;
         }
         
-        public static Directory getDirectoryDinamically(String input) {
-         	Directory newDirectory=Directory.findSubFolder(currentDirectory,  currentDirectory.getName()+"/"+input);
-     		if(newDirectory==null) {
-     			newDirectory=Directory.findSubFolder(root, "root/"+user.getName()+"/"+input);
-     		}
-     		return newDirectory;
-         }
+        
 
         public void run() {
             try {
@@ -253,6 +247,13 @@ public class Server {
                 try { socket.close(); } catch (IOException e) {}
             }
         }
+        public static Directory getDirectoryDinamically(String input) {
+         	Directory newDirectory=Directory.findSubFolder(currentDirectory,  currentDirectory.getName()+"/"+input);
+     		if(newDirectory==null) {
+     			newDirectory=Directory.findSubFolder(root, "root/"+user.getName()+"/"+input);
+     		}
+     		return newDirectory;
+         }
         
      public boolean logIn() {
     	 out.println("USER");
